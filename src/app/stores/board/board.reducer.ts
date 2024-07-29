@@ -1,5 +1,5 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
-import { BoardActions } from './board.actions';
+import { BoardActions, Direction } from './board.actions';
 
 export const boardFeatureKey = 'board';
 
@@ -10,51 +10,148 @@ export interface Stone {
 
 export interface State {
   stones: (Stone | null)[];
+  move: number;
 }
 
 const boardWidth = 4;
 
 export const initialState: State = {
-  stones: initialSlots(),
+  stones: addRandomStone(
+    addRandomStone(new Array(boardWidth * boardWidth).fill(null), 0),
+    1
+  ),
+  move: 0,
 };
 
 export const reducer = createReducer(
   initialState,
-  on(BoardActions.shift, (state, action) => {
-    const stones = [...state.stones];
-
-    for (let index = 1; index < stones.length - 1; index++) {
-      const stone = stones[index];
-
-      if (stone === null) continue;
-
-      stones[index - 1] = { ...stone };
-      stones[index] = null;
-    }
-
-    return {
-      stones: stones,
-    };
-  })
+  on(BoardActions.shift, (state, action) => ({
+    stones: shiftStones(state.stones, action.direction, state.move),
+    move: state.move + 1,
+  }))
 );
 
 export const boardFeature = createFeature({
   name: boardFeatureKey,
   reducer,
 });
-function initialSlots(): (Stone | null)[] {
-  var positions = [
-    Math.floor(Math.random() * (boardWidth * boardWidth)),
-    Math.floor(Math.random() * (boardWidth * boardWidth)),
-  ];
 
-  console.log('positions', positions);
+function shiftStones(
+  stones: (Stone | null)[],
+  direction: Direction,
+  move: number
+): (Stone | null)[] {
+  const splittedStones = splitStones(stones, boardWidth, direction);
+  const updatedRows = splittedStones.map((row) => updateRow(row));
+  const mergedRows = mergeStones(updatedRows, direction);
+  return addRandomStone(mergedRows, move);
+}
 
-  const emptySlots = new Array(boardWidth * boardWidth).fill(null);
-  emptySlots[positions[0]] = { id: 0, value: 2 };
-  emptySlots[positions[1]] = { id: 1, value: 2 };
+function updateRow(row: (Stone | null)[]): (Stone | null)[] {
+  let filteredRow = row.filter((stone) => stone !== null);
 
-  console.log('emptySlots', emptySlots);
+  for (let i = filteredRow.length - 1; i > 0; i--) {
+    if (filteredRow[i]!.value === filteredRow[i - 1]!.value) {
+      filteredRow[i] = {
+        id: filteredRow[i - 1]!.id,
+        value: filteredRow[i - 1]!.value * 2,
+      };
+      filteredRow.splice(i - 1, 1);
+    }
+  }
 
-  return emptySlots;
+  const result: (Stone | null)[] = [...filteredRow];
+
+  while (result.length < row.length) {
+    result.unshift(null);
+  }
+  return result;
+}
+
+function splitStones(
+  array: (Stone | null)[],
+  width: number,
+  direction: Direction
+): (Stone | null)[][] {
+  let matrix = Array.from({ length: width }, (_, i) =>
+    array.slice(i * width, (i + 1) * width)
+  );
+
+  switch (direction) {
+    case Direction.Right:
+      break;
+    case Direction.Left:
+      matrix = flipMatrix(matrix);
+      break;
+    case Direction.Up:
+      matrix = rotateMatrix(matrix);
+      break;
+    case Direction.Down:
+      matrix = rotateMatrixReverse(matrix);
+      break;
+
+    default:
+      throw new Error('Invalid direction');
+  }
+
+  return matrix;
+}
+function mergeStones(
+  arrays: (Stone | null)[][],
+  direction: Direction
+): (Stone | null)[] {
+  let result: (Stone | null)[] = [];
+
+  switch (direction) {
+    case Direction.Right:
+      result = arrays.flat();
+      break;
+    case Direction.Left:
+      result = arrays.flatMap((row) => row.reverse());
+      break;
+    case Direction.Up:
+      result = rotateMatrixReverse(arrays).flat();
+      break;
+    case Direction.Down:
+      result = rotateMatrix(arrays).flat();
+      break;
+
+    default:
+      throw new Error('Invalid direction');
+  }
+
+  return result;
+}
+
+function rotateMatrix<T>(matrix: T[][]) {
+  return matrix[0].map((val, index) =>
+    matrix.map((row) => row[index]).reverse()
+  );
+}
+
+function rotateMatrixReverse<T>(matrix: T[][]) {
+  return matrix[0].map((val, index) =>
+    matrix.map((row) => row[row.length - 1 - index])
+  );
+}
+
+function flipMatrix<T>(matrix: T[][]) {
+  return matrix.map((val) => val.reverse());
+}
+
+function addRandomStone(
+  mergedRows: (Stone | null)[],
+  move: number
+): (Stone | null)[] {
+  const emptySlots = mergedRows
+    .map((value, index) => ({ value, index }))
+    .filter((entry) => entry.value === null);
+
+  const random = Math.floor(Math.random() * emptySlots.length);
+  const randomEmptySlot = emptySlots[random];
+
+  const result = [...mergedRows];
+  result[randomEmptySlot.index] = { id: (move + 1).toString(), value: 2 };
+
+  return result;
 }

@@ -1,9 +1,16 @@
 import { Injectable } from '@angular/core';
-import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, concatMap, filter } from 'rxjs/operators';
-import { Observable, EMPTY, of, fromEvent } from 'rxjs';
-import { BoardActions } from './board.actions';
+import { Actions, createEffect } from '@ngrx/effects';
+import { map, filter } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
+import { BoardActions, Direction } from './board.actions';
 import { Store } from '@ngrx/store';
+
+const keyDirections: { [index: string]: Direction } = {
+  ArrowUp: Direction.Up,
+  ArrowDown: Direction.Down,
+  ArrowLeft: Direction.Left,
+  ArrowRight: Direction.Right,
+};
 
 @Injectable()
 export class BoardEffects {
@@ -12,7 +19,9 @@ export class BoardEffects {
       filter((event) =>
         ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)
       ),
-      map((event) => BoardActions.shift())
+      map((event) =>
+        BoardActions.shift({ direction: keyDirections[event.key] })
+      )
     )
   );
 
