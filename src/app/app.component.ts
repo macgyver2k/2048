@@ -7,7 +7,13 @@ import { BoardComponent } from './board.component';
   standalone: true,
   imports: [RouterOutlet, BoardComponent],
   template: ` <app-board /> `,
-  styles: [],
+  styles: [
+    `
+      :host {
+        @apply flex flex-col items-center justify-center h-full;
+      }
+    `,
+  ],
 })
 export class AppComponent {
   title = '2048';
