@@ -1,4 +1,4 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 export enum Direction {
   Up,
@@ -11,5 +11,7 @@ export const BoardActions = createActionGroup({
   source: 'Board',
   events: {
     Shift: props<{ direction: Direction }>(),
+    ToggleInsert: emptyProps(),
+    ToggleLabel: emptyProps(),
   },
 });

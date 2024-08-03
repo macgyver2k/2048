@@ -2,7 +2,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "@fontsource/clear-sans";
 
 body {
-  @apply bg-[#faf8ef];
+  @apply bg-[#faf8ef] font-sans text-primary;
 }

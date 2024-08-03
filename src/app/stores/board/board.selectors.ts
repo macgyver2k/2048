@@ -10,6 +10,11 @@ export const selectStones = createSelector(
   (state) => state.stones
 );
 
+export const selectShowLabel = createSelector(
+  selectBoardState,
+  (state) => state.showLabel
+);
+
 export const selectSlotsIndexed = createSelector(selectStones, (stones) => {
   const chunkSize = Math.sqrt(stones.length);
 
